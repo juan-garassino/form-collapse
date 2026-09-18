@@ -1,0 +1,20 @@
+[project]
+name = "formcollapse"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+  "numpy",
+  "scipy",
+  "matplotlib",
+  "seaborn",
+  "torch",
+  "pyyaml",
+  "svgwrite",
+  "rich",
+  "pyfiglet",
+  "pytest",
+  "textual",
+  "plotext",]
+
+[tool.uv]
+package = false
