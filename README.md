@@ -39,7 +39,7 @@ The smallest run above writes a session directory under `results/` (git-ignored)
 Lorenz: strange_attractor (MLE=1.0304, 0.2s)
 ```
 
-This value was observed when running the command on 2026-10-15 with the pinned dependencies; it is not stored in the repo. The repo's own check is `tests/test_core.py`, which asserts that the Lorenz MLE estimate lies in the range 0.3 to 2.0 (the Lorenz system's MLE is positive, as the method in [docs/lyapunov.md](docs/lyapunov.md) expects for chaos).
+The MLE value varies between runs because the initial condition is random: two runs on 2026-10-15 with the pinned dependencies gave 1.0304 and 0.7594. These numbers are not stored in the repo. The repo's own check is `tests/test_core.py`, which asserts that the Lorenz MLE estimate lies in the range 0.3 to 2.0 (the Lorenz system's MLE is positive, as the method in [docs/lyapunov.md](docs/lyapunov.md) expects for chaos).
 
 ## Features
 
