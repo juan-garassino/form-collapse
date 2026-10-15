@@ -1,8 +1,9 @@
 """HTML gallery generator from session data."""
+import html as _html
 import os
 import json
 import logging
-from typing import List, Dict, Any
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -88,24 +89,26 @@ def generate_gallery(base_dir: str = "results", output_dir: str = None) -> str:
     cards_html = []
     for session_data, session_dir in sessions:
         for result in session_data.get('results', []):
-            system_name = result.get('system_name', 'Unknown')
-            classification = result.get('classification', 'unknown')
+            # session.json is untrusted input: escape every field we inject into HTML
+            esc = lambda v: _html.escape(str(v), quote=True)  # noqa: E731
+            system_name = esc(result.get('system_name', 'Unknown'))
+            classification = esc(result.get('classification', 'unknown'))
             lyap = result.get('lyapunov_exponent')
-            lyap_str = f"{lyap:.6f}" if lyap is not None else "N/A"
+            lyap_str = f"{lyap:.6f}" if isinstance(lyap, (int, float)) else "N/A"
             params = result.get('params', {})
-            params_str = ", ".join(f"{k}={v:.3f}" if isinstance(v, float) else f"{k}={v}"
+            params_str = esc(", ".join(f"{k}={v:.3f}" if isinstance(v, float) else f"{k}={v}"
                                    for k, v in params.items()
-                                   if k not in ('sim_time', 'sim_steps', 'scale'))
+                                   if k not in ('sim_time', 'sim_steps', 'scale')))
 
             # Find thumbnail
             img_tag = '<div class="no-img">No preview</div>'
             files = result.get('files', [])
             for f in files:
-                if 'attractor_3d' in f and f.endswith('.png'):
+                if isinstance(f, str) and 'attractor_3d' in f and f.endswith('.png'):
                     img_path = os.path.join(session_dir, 'png', f)
                     if os.path.exists(img_path):
                         rel_path = os.path.relpath(img_path, output_dir)
-                        img_tag = f'<img src="{rel_path}" alt="{system_name}">'
+                        img_tag = f'<img src="{esc(rel_path)}" alt="{system_name}">'
                     break
 
             cards_html.append(CARD_TEMPLATE.format(

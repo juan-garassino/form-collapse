@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.spatial import cKDTree
-from typing import Dict, Any, Callable, Tuple, Optional, List
+from typing import Dict, Any, Callable, Tuple, Optional
 import logging
 import time
 import warnings

@@ -1,7 +1,7 @@
 import svgwrite
 import os
 import logging
-from typing import List, Tuple
+from typing import List
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -190,11 +190,6 @@ def _normalise_and_scale(data: np.ndarray, canvas_size, canvas_margin: float = 0
     # Normalise to [0, 1]
     normalised = (pts - mins) / ranges
 
-    if preserve_aspect:
-        # Use the same scale factor for both axes so aspect ratio is kept
-        aspect = ranges / ranges.max()
-        normalised = normalised * aspect
-
     # Compute drawable area inside margins
     cw, ch = float(canvas_size[0]), float(canvas_size[1])
     margin_x = cw * canvas_margin
@@ -203,8 +198,16 @@ def _normalise_and_scale(data: np.ndarray, canvas_size, canvas_margin: float = 0
     draw_h = ch - 2 * margin_y
 
     scaled = normalised.copy()
-    scaled[:, 0] = normalised[:, 0] * draw_w + margin_x
-    scaled[:, 1] = normalised[:, 1] * draw_h + margin_y
+    if preserve_aspect:
+        # One uniform data-units -> canvas-units factor for both axes, sized so
+        # the larger data extent fits the drawable area (works on non-square
+        # canvases too, where per-axis draw_w/draw_h scaling would distort).
+        factor = min(draw_w / ranges[0], draw_h / ranges[1])
+        scaled[:, 0] = normalised[:, 0] * ranges[0] * factor + margin_x
+        scaled[:, 1] = normalised[:, 1] * ranges[1] * factor + margin_y
+    else:
+        scaled[:, 0] = normalised[:, 0] * draw_w + margin_x
+        scaled[:, 1] = normalised[:, 1] * draw_h + margin_y
 
     return scaled
 

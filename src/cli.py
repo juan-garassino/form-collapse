@@ -3,7 +3,7 @@
 import logging
 from typing import Dict, Any, List
 
-from .router import Mode, ALL_RENDER_MODES, draw_attractor
+from .router import Mode, draw_attractor
 from .session import Session
 
 logger = logging.getLogger(__name__)
