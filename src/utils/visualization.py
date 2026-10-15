@@ -1,15 +1,13 @@
 """Matplotlib plots (3D, phase, Poincare, spectrum, time series, heatmaps) saved as PNG."""
 import matplotlib.pyplot as plt
-import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
+import seaborn as sns
 import os
 import numpy as np
-from typing import Dict, Tuple, Optional
+from typing import Dict
 import logging
-from matplotlib.animation import FuncAnimation
 from scipy.signal import welch, savgol_filter
 from scipy.interpolate import splprep, splev
-from scipy.signal import savgol_filter
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +77,7 @@ def remove_top_right_axes(ax: plt.Axes) -> None:
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
 
-def set_equal_aspect(ax):
+def set_equal_aspect(ax: Axes3D) -> None:
     """Set equal scaling for 3D plots."""
     limits = np.array([ax.get_xlim(), ax.get_ylim(), ax.get_zlim()])
     center = np.mean(limits, axis=1)
@@ -88,8 +86,8 @@ def set_equal_aspect(ax):
     for axis, ctr in zip([ax.set_xlim, ax.set_ylim, ax.set_zlim], center):
         axis([ctr - max_range, ctr + max_range])
 
-def set_axis_limits_with_margin(ax, data, margin=0.1):
-    """Set axis limits with margins for 2D plots."""
+def set_axis_limits_with_margin(ax: plt.Axes, data: np.ndarray, margin: float = 0.1) -> None:
+    """Set axis limits for 2D plots from ``data`` of shape (n, >=2), padded by ``margin`` of the range."""
     min_vals = np.min(data, axis=0)
     max_vals = np.max(data, axis=0)
     

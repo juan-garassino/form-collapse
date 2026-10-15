@@ -4,9 +4,7 @@ import sys
 import argparse
 import logging
 from typing import Dict, Any, List, Optional
-from datetime import datetime
 
-import numpy as np
 import torch
 
 from src.utils.config import get_config, generate_params_lhs

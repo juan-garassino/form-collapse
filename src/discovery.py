@@ -1,11 +1,10 @@
 """Attractor discovery engine — find interesting parameter regimes."""
 import logging
 import numpy as np
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 
 from .utils.config import generate_params_lhs
-from .attractors.simulators import adaptive_simulation, compute_lyapunov_exponent, classify_attractor, SYSTEM_FUNCTIONS
-from .utils.visualization import plot_attractor
+from .attractors.simulators import adaptive_simulation, compute_lyapunov_exponent, classify_attractor
 
 logger = logging.getLogger(__name__)
 

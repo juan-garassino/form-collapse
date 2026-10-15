@@ -2,7 +2,7 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.spatial import cKDTree
-from typing import Dict, Any, Callable, Tuple, Optional, List
+from typing import Dict, Any, Callable, Tuple, Optional
 import logging
 import time
 import warnings
@@ -50,7 +50,13 @@ SYSTEM_SCALES: Dict[str, Dict[str, Any]] = {
     'liu_chen_system': {'scale': 20.0, 'params': {'a': (5, 5.5), 'b': (-10, -9.5), 'c': (-3.8, -3.6), 'd': (1, 1.1)}}
 }
 
-def iterate_map(map_func, initial_state, params, n_iterations, transient=1000):
+def iterate_map(
+    map_func: Callable[[np.ndarray, Dict[str, float]], np.ndarray],
+    initial_state: np.ndarray,
+    params: Dict[str, float],
+    n_iterations: int,
+    transient: int = 1000,
+) -> np.ndarray:
     """Iterate a discrete map, discarding the first ``transient`` steps.
 
     ``initial_state`` has shape (3,); returns a float array of shape (n_iterations, 3).

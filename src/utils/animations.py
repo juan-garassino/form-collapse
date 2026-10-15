@@ -18,7 +18,6 @@ def compute_curvature(x: np.ndarray, y: np.ndarray, z: np.ndarray) -> np.ndarray
     dy = np.gradient(y)
     dz = np.gradient(z)
     
-    d2x = np.gradient(dx)
     d2y = np.gradient(dy)
     d2z = np.gradient(dz)
 

@@ -9,7 +9,6 @@ import logging
 from .models import create_models
 from ..utils.visualization import plot_attractor, plot_phase_space, plot_time_series
 from ..utils.svg_gcode import save_svg, generate_gcode
-from ..utils.data_handling import save_data
 
 logger = logging.getLogger(__name__)
 
