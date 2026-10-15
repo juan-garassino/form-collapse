@@ -1,3 +1,4 @@
+"""Conv1d GAN for 3D trajectory segments of shape (batch, seq_len, 3)."""
 import torch
 import torch.nn as nn
 import logging
@@ -6,6 +7,8 @@ from typing import Tuple
 logger = logging.getLogger(__name__)
 
 class Generator(nn.Module):
+    """Map latent vectors of shape (batch, latent_dim) to segments (batch, seq_len, 3), values in [-1, 1]."""
+
     def __init__(self, latent_dim: int, seq_len: int = 64):
         super(Generator, self).__init__()
         self.seq_len = seq_len
@@ -32,6 +35,7 @@ class Generator(nn.Module):
         logger.info(f"Initialized Generator with latent_dim: {latent_dim}, seq_len: {seq_len}")
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:
+        """Return generated segments, float tensor of shape (batch, seq_len, 3)."""
         x = self.fc(z)                    # (batch, 256*16)
         x = x.view(-1, 256, 16)           # (batch, 256, 16)
         x = self.conv(x)                  # (batch, 3, ~seq_len)
@@ -40,6 +44,8 @@ class Generator(nn.Module):
         return x
 
 class Discriminator(nn.Module):
+    """Score segments of shape (batch, seq_len, 3) with one raw logit each, shape (batch, 1)."""
+
     def __init__(self, seq_len: int = 64):
         super(Discriminator, self).__init__()
         self.seq_len = seq_len
@@ -59,6 +65,7 @@ class Discriminator(nn.Module):
         logger.info(f"Initialized Discriminator with seq_len: {seq_len}")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Return logits of shape (batch, 1) for input of shape (batch, seq_len, 3)."""
         x = x.permute(0, 2, 1)  # (batch, seq_len, 3) -> (batch, 3, seq_len)
         x = self.conv(x)        # (batch, 128 * seq_len//4)
         x = self.fc(x)          # (batch, 1)

@@ -1,3 +1,4 @@
+"""Matplotlib plots (3D, phase, Poincare, spectrum, time series, heatmaps) saved as PNG."""
 import matplotlib.pyplot as plt
 import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
@@ -18,6 +19,7 @@ plt.rcParams['axes.edgecolor'] = '0.2'
 plt.rcParams['axes.linewidth'] = 0.5
 
 def save_png(fig: plt.Figure, filename: str, output_dir: str) -> None:
+    """Save ``fig`` as ``<output_dir>/png/<filename>.png`` at 300 dpi; failures are logged, not raised."""
     png_dir = os.path.join(output_dir, 'png')
     os.makedirs(png_dir, exist_ok=True)
     full_path = os.path.join(png_dir, f"{filename}.png")
@@ -34,6 +36,11 @@ def min_max_scale(data: np.ndarray) -> np.ndarray:
     return (data - min_val) / (max_val - min_val)
 
 def smooth_data(data: np.ndarray, smooth: bool = False, resolution: int = 10000) -> np.ndarray:
+    """Optionally resample a trajectory (n, 3) with a cubic spline to ``resolution`` points.
+
+    Falls back to a Savitzky-Golay filter if the spline fit fails. Returns ``data``
+    unchanged when ``smooth`` is False.
+    """
     if not smooth:
         return data
     

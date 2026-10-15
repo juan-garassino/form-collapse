@@ -1,7 +1,13 @@
+"""Latent-space interpolation for a trained generator."""
 import torch
 import numpy as np
 
-def interpolate_latent_space(generator, latent_dim, num_points=100, device='cpu'):
+
+def interpolate_latent_space(generator: torch.nn.Module, latent_dim: int, num_points: int = 100, device: str = 'cpu') -> np.ndarray:
+    """Generate a trajectory along a line between two random latent vectors.
+
+    Returns a float array of shape (num_points * seq_len, 3).
+    """
     generator.eval()
     with torch.no_grad():
         # Generate two random points in latent space

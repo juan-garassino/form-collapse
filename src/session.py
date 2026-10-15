@@ -25,6 +25,8 @@ class _NumpyEncoder(json.JSONEncoder):
 
 
 class Session:
+    """Timestamped output directory plus a ``session.json`` record of the results added to it."""
+
     def __init__(self, base_dir: str = "results"):
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.session_dir = os.path.join(base_dir, self.timestamp)
@@ -48,6 +50,7 @@ class Session:
         params: Dict[str, Any],
         files: List[str],
     ) -> None:
+        """Record one system's classification, Lyapunov exponent, parameters and output files."""
         # Filter out non-serializable keys from params
         serializable_params = {}
         for k, v in params.items():

@@ -1,3 +1,4 @@
+"""Configuration loading, parameter generation (random and Latin Hypercube) and presets."""
 import yaml
 import logging
 from typing import Dict, Any, List
@@ -45,6 +46,10 @@ def load_config(config_path: str) -> Dict[str, Any]:
 
 
 def generate_system_params(config: Dict[str, Any], system_name: str) -> Dict[str, Any]:
+    """Draw one random parameter set for a system from its ranges in ``config``.
+
+    Returns the sampled parameters plus ``sim_time``, ``sim_steps`` and ``scale``.
+    """
     system_config = config['systems'][system_name]
     params = {}
     for param_name, param_config in system_config['params'].items():

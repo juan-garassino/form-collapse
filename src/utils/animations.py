@@ -1,3 +1,4 @@
+"""3D trajectory animation with curvature-based line thickness."""
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation

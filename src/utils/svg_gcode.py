@@ -1,3 +1,4 @@
+"""SVG and G-code export with RDP simplification, pen-lift detection and stroke ordering."""
 import svgwrite
 import os
 import logging

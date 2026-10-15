@@ -1,3 +1,8 @@
+"""Right-hand sides of the 17 continuous (ODE) attractor systems.
+
+Each ``*_system(X, t, params)`` takes a state ``X`` of shape (3,), a time ``t``
+and a parameter dict, and returns the derivative as a float array of shape (3,).
+"""
 import numpy as np
 from typing import Dict
 import logging

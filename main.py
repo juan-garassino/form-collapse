@@ -1,8 +1,9 @@
+"""Command-line entry point for formCollapse: simulate attractors, render, sweep, compose."""
 import os
 import sys
 import argparse
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 import numpy as np
@@ -16,7 +17,16 @@ from src.utils.visualization import create_summary_plot
 from src.utils.data_handling import save_data
 
 
-def setup_logging(log_level: str = "INFO", log_file: str = None) -> None:
+def setup_logging(log_level: str = "INFO", log_file: Optional[str] = None) -> None:
+    """Configure root logging to stderr and, optionally, to a file.
+
+    Parameters
+    ----------
+    log_level : str
+        Logging level name, e.g. ``"INFO"``.
+    log_file : str, optional
+        If given, log records are also written to this path.
+    """
     handlers = [logging.StreamHandler()]
     if log_file:
         handlers.append(logging.FileHandler(log_file))
@@ -30,6 +40,7 @@ def setup_logging(log_level: str = "INFO", log_file: str = None) -> None:
 
 
 def parse_arguments() -> argparse.Namespace:
+    """Build the CLI parser and return the parsed arguments (see README for flags)."""
     parser = argparse.ArgumentParser(
         description="Simulate strange attractors and create visualizations."
     )
@@ -157,6 +168,7 @@ def _run_sweep(
 
 
 def main() -> None:
+    """Run interactive mode when no arguments are given, otherwise the CLI pipeline."""
     # No args at all -> interactive mode
     if len(sys.argv) == 1:
         config_path = 'config.yaml'

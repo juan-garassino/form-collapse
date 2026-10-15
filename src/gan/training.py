@@ -1,3 +1,4 @@
+"""GAN training on windowed trajectory segments."""
 import torch
 import torch.nn as nn
 import torch.optim as optim
