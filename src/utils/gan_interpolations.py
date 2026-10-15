@@ -23,7 +23,3 @@ def interpolate_latent_space(generator: torch.nn.Module, latent_dim: int, num_po
     
     # Each interpolated point produces (seq_len, 3); flatten segments into trajectory
     return interpolated_data.reshape(-1, 3)
-
-# Usage:
-# interpolated_data = interpolate_latent_space(generator, latent_dim, device=device)
-# inverse_transformed_data = scaler.inverse_transform(interpolated_data)

@@ -47,7 +47,6 @@ def animate_3d(name: str, data: np.ndarray, output_dir: str) -> None:
     max_line_width = 1.2
     thickness = min_line_width + (max_line_width - min_line_width) * curvature
 
-    # Create the figure and 3D axis
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
 
@@ -65,7 +64,6 @@ def animate_3d(name: str, data: np.ndarray, output_dir: str) -> None:
     y_margin = y_range * margin
     z_margin = z_range * margin
 
-    # Set the limits with margin
     ax.set_xlim(x_min - x_margin, x_max + x_margin)
     ax.set_ylim(y_min - y_margin, y_max + y_margin)
     ax.set_zlim(z_min - z_margin, z_max + z_margin)
@@ -110,27 +108,22 @@ def animate_3d(name: str, data: np.ndarray, output_dir: str) -> None:
         ax.yaxis.line.set_color((0.0, 0.0, 0.0, 0.0))
         ax.zaxis.line.set_color((0.0, 0.0, 0.0, 0.0))
 
-        # Create the line with varying thickness
         segments = [[(x[j-1], y[j-1], z[j-1]), (x[j], y[j], z[j])] for j in range(1, i)]
         line_collection = Line3DCollection(segments, colors='white', linewidths=thickness[:i])
         ax.add_collection(line_collection)
         
         return []
 
-    # Define the number of frames and interval
     num_frames = min(len(scaled_data), 500)
     frame_interval = len(scaled_data) // num_frames
 
-    # Create the animation
     anim = FuncAnimation(fig, animate, init_func=init,
                          frames=range(0, len(scaled_data), frame_interval),
                          interval=20, blit=True)
 
-    # Create output directory if it doesn't exist
     animation_dir = os.path.join(output_dir, 'animations')
     os.makedirs(animation_dir, exist_ok=True)
 
-    # Save the animation in high quality
     anim.save(os.path.join(animation_dir, f'{name}_3d_animation.mp4'),
               writer='ffmpeg', fps=30, dpi=300, bitrate=5000)
 
