@@ -1,14 +1,13 @@
+"""Matplotlib plots (3D, phase, Poincare, spectrum, time series, heatmaps) saved as PNG."""
 import matplotlib.pyplot as plt
-import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
+import seaborn as sns
 import os
 import numpy as np
-from typing import Dict, Tuple, Optional
+from typing import Dict
 import logging
-from matplotlib.animation import FuncAnimation
 from scipy.signal import welch, savgol_filter
 from scipy.interpolate import splprep, splev
-from scipy.signal import savgol_filter
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +17,7 @@ plt.rcParams['axes.edgecolor'] = '0.2'
 plt.rcParams['axes.linewidth'] = 0.5
 
 def save_png(fig: plt.Figure, filename: str, output_dir: str) -> None:
+    """Save ``fig`` as ``<output_dir>/png/<filename>.png`` at 300 dpi; failures are logged, not raised."""
     png_dir = os.path.join(output_dir, 'png')
     os.makedirs(png_dir, exist_ok=True)
     full_path = os.path.join(png_dir, f"{filename}.png")
@@ -34,6 +34,11 @@ def min_max_scale(data: np.ndarray) -> np.ndarray:
     return (data - min_val) / (max_val - min_val)
 
 def smooth_data(data: np.ndarray, smooth: bool = False, resolution: int = 10000) -> np.ndarray:
+    """Optionally resample a trajectory (n, 3) with a cubic spline to ``resolution`` points.
+
+    Falls back to a Savitzky-Golay filter if the spline fit fails. Returns ``data``
+    unchanged when ``smooth`` is False.
+    """
     if not smooth:
         return data
     
@@ -72,7 +77,7 @@ def remove_top_right_axes(ax: plt.Axes) -> None:
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
 
-def set_equal_aspect(ax):
+def set_equal_aspect(ax: Axes3D) -> None:
     """Set equal scaling for 3D plots."""
     limits = np.array([ax.get_xlim(), ax.get_ylim(), ax.get_zlim()])
     center = np.mean(limits, axis=1)
@@ -81,8 +86,8 @@ def set_equal_aspect(ax):
     for axis, ctr in zip([ax.set_xlim, ax.set_ylim, ax.set_zlim], center):
         axis([ctr - max_range, ctr + max_range])
 
-def set_axis_limits_with_margin(ax, data, margin=0.1):
-    """Set axis limits with margins for 2D plots."""
+def set_axis_limits_with_margin(ax: plt.Axes, data: np.ndarray, margin: float = 0.1) -> None:
+    """Set axis limits for 2D plots from ``data`` of shape (n, >=2), padded by ``margin`` of the range."""
     min_vals = np.min(data, axis=0)
     max_vals = np.max(data, axis=0)
     
@@ -283,83 +288,6 @@ def plot_time_series(name: str, data: np.ndarray, output_dir: str, smooth: bool 
         plt.close(fig)
     except Exception as e:
         logger.error(f"Failed to plot time series for attractor {name}: {str(e)}")
-
-# def animate_3d(name: str, data: np.ndarray, output_dir: str) -> None:
-#     """Create a high-quality 3D animation of the attractor with only the line visible."""
-#     logger.info(f"Creating 3D animation for attractor: {name}")
-
-#     scaled_data = min_max_scale(data)
-
-#     # Calculate margins
-#     x_min, x_max = scaled_data[:, 0].min(), scaled_data[:, 0].max()
-#     y_min, y_max = scaled_data[:, 1].min(), scaled_data[:, 1].max()
-#     z_min, z_max = scaled_data[:, 2].min(), scaled_data[:, 2].max()
-
-#     margin = 0.1
-#     x_range = x_max - x_min
-#     y_range = y_max - y_min
-#     z_range = z_max - z_min
-
-#     x_margin = x_range * margin
-#     y_margin = y_range * margin
-#     z_margin = z_range * margin
-
-#     fig = plt.figure(figsize=(10, 8))
-#     ax = fig.add_subplot(111, projection='3d')
-
-#     # Set the limits with margin
-#     ax.set_xlim(x_min - x_margin, x_max + x_margin)
-#     ax.set_ylim(y_min - y_margin, y_max + y_margin)
-#     ax.set_zlim(z_min - z_margin, z_max + z_margin)
-
-#     # Plot initialization
-#     line, = ax.plot([], [], [], lw=0.5, color='white')  # White line
-
-#     # Set background color to dark gray and hide axis elements
-#     dark_gray = '#333333'
-#     ax.set_facecolor(dark_gray)
-#     fig.patch.set_facecolor(dark_gray)
-#     ax.set_xticks([])  # Remove x-axis ticks
-#     ax.set_yticks([])  # Remove y-axis ticks
-#     ax.set_zticks([])  # Remove z-axis ticks
-#     ax.xaxis.pane.set_visible(False)  # Hide the x-axis pane
-#     ax.yaxis.pane.set_visible(False)  # Hide the y-axis pane
-#     ax.zaxis.pane.set_visible(False)  # Hide the z-axis pane
-#     ax.xaxis.line.set_color((0.0, 0.0, 0.0, 0.0))  # Hide x-axis line
-#     ax.yaxis.line.set_color((0.0, 0.0, 0.0, 0.0))  # Hide y-axis line
-#     ax.zaxis.line.set_color((0.0, 0.0, 0.0, 0.0))  # Hide z-axis line
-
-#     # Animation init function
-#     def init():
-#         line.set_data([], [])
-#         line.set_3d_properties([])
-#         return line,
-
-#     # Animation update function
-#     def animate(i):
-#         line.set_data(scaled_data[:i, 0], scaled_data[:i, 1])
-#         line.set_3d_properties(scaled_data[:i, 2])
-#         return line,
-
-#     # Define the number of frames and interval
-#     num_frames = min(len(scaled_data), 500)  # Limit to 500 frames
-#     frame_interval = len(scaled_data) // num_frames
-
-#     # Create the animation
-#     anim = FuncAnimation(fig, animate, init_func=init,
-#                          frames=range(0, len(scaled_data), frame_interval),
-#                          interval=20, blit=True)
-
-#     # Create output directory if it doesn't exist
-#     animation_dir = os.path.join(output_dir, 'animations')
-#     os.makedirs(animation_dir, exist_ok=True)
-
-#     # Save the animation in high quality
-#     anim.save(os.path.join(animation_dir, f'{name}_3d_animation.mp4'),
-#               writer='ffmpeg', fps=30, dpi=300, bitrate=5000)  # High DPI and bitrate for quality
-
-#     plt.close(fig)
-#     logger.info(f"3D animation for {name} saved successfully")
 
 def plot_poincare_section(name: str, data: np.ndarray, output_dir: str, plane: str = 'xy', threshold: float = 0.5) -> None:
     """Plot Poincaré section of the attractor with min-max scaling."""

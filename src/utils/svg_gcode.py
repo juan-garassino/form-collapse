@@ -1,7 +1,8 @@
+"""SVG and G-code export with RDP simplification, pen-lift detection and stroke ordering."""
 import svgwrite
 import os
 import logging
-from typing import List, Tuple
+from typing import List
 import numpy as np
 
 logger = logging.getLogger(__name__)

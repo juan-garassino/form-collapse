@@ -2,14 +2,33 @@
 import os
 import logging
 import numpy as np
-from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Any, Tuple
+from dataclasses import dataclass
+from typing import List, Dict, Tuple
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class CompositionLayer:
+    """One attractor layer in a composition.
+
+    Attributes
+    ----------
+    name : str
+        Layer label.
+    data : np.ndarray
+        Trajectory of shape (n, 2) or (n, 3), float.
+    color : str
+        SVG stroke colour.
+    pen_number : int
+        Tool number used for G-code tool changes.
+    scale : float
+        Scale factor applied to the normalised layer.
+    translate : tuple of float
+        (dx, dy) offset.
+    rotate : float
+        Rotation in degrees.
+    """
     name: str
     data: np.ndarray
     color: str = "black"

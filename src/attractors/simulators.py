@@ -1,7 +1,8 @@
+"""Simulation, validity checks, Lyapunov exponent estimation and classification."""
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.spatial import cKDTree
-from typing import Dict, Any, Callable, Tuple, Optional, List
+from typing import Dict, Any, Callable, Tuple, Optional
 import logging
 import time
 import warnings
@@ -49,8 +50,17 @@ SYSTEM_SCALES: Dict[str, Dict[str, Any]] = {
     'liu_chen_system': {'scale': 20.0, 'params': {'a': (5, 5.5), 'b': (-10, -9.5), 'c': (-3.8, -3.6), 'd': (1, 1.1)}}
 }
 
-def iterate_map(map_func, initial_state, params, n_iterations, transient=1000):
-    """Iterate a discrete map and return trajectory."""
+def iterate_map(
+    map_func: Callable[[np.ndarray, Dict[str, float]], np.ndarray],
+    initial_state: np.ndarray,
+    params: Dict[str, float],
+    n_iterations: int,
+    transient: int = 1000,
+) -> np.ndarray:
+    """Iterate a discrete map, discarding the first ``transient`` steps.
+
+    ``initial_state`` has shape (3,); returns a float array of shape (n_iterations, 3).
+    """
     state = initial_state.copy()
     trajectory = []
     for i in range(n_iterations + transient):
@@ -79,6 +89,40 @@ def adaptive_simulation(
     max_time: float = 30.0,
     scale: float = 1.0
 ) -> Tuple[bool, Optional[np.ndarray], str]:
+    """Simulate a system, retrying with looser tolerances and other solvers on failure.
+
+    Discrete maps (names in ``MAP_FUNCTIONS``) are iterated directly; ODE systems
+    are integrated with RK45, then BDF and Radau, over several attempts.
+
+    Parameters
+    ----------
+    system_name : str
+        Display name (not used for lookup).
+    system_func : str
+        Key into ``SYSTEM_FUNCTIONS`` or ``MAP_FUNCTIONS``.
+    params : dict of str to float
+        System parameters passed to the right-hand side.
+    sim_time : float
+        Simulated time span of an ODE run.
+    sim_steps : int
+        Number of output points (ODE) or iterations (map).
+    max_attempts : int
+        Maximum number of ODE attempts with new initial conditions.
+    max_time : float
+        Wall-clock budget in seconds; data may be truncated if exceeded.
+    scale : float
+        Initial-condition scale.
+
+    Returns
+    -------
+    tuple of (bool, np.ndarray or None, str)
+        Success flag, trajectory of shape (n, 3) float64 on success, and a message.
+
+    Raises
+    ------
+    ValueError
+        If ``system_func`` is not a known ODE function.
+    """
     start_time = time.time()
 
     # Check if it's a discrete map

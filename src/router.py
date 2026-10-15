@@ -3,7 +3,7 @@
 import logging
 import time
 from enum import Enum
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, Any, List, Optional, Callable
 
 import numpy as np
@@ -14,10 +14,9 @@ from .attractors.simulators import (
     compute_lyapunov_exponent,
     classify_attractor,
 )
-from .utils.config import generate_system_params, generate_params_lhs, KNOWN_GOOD_PRESETS
+from .utils.config import generate_system_params, KNOWN_GOOD_PRESETS
 from .utils.visualization import (
     plot_attractor,
-    create_summary_plot,
     plot_phase_space,
     plot_time_series,
     plot_poincare_section,
@@ -32,6 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 class Mode(Enum):
+    """Visualization modes selectable from the CLI; ``all`` expands to every other mode."""
+
     trajectory = "trajectory"
     phase = "phase"
     poincare = "poincare"
@@ -48,6 +49,8 @@ ALL_RENDER_MODES = [m for m in Mode if m != Mode.all]
 
 @dataclass
 class RenderRequest:
+    """Inputs for one render: trajectory ``data`` (n, 3), output location, modes and export options."""
+
     name: str
     data: np.ndarray
     output_dir: str
@@ -65,6 +68,8 @@ class RenderRequest:
 
 
 class ModeRouter:
+    """Dispatch a ``RenderRequest`` to the per-mode render handlers."""
+
     def __init__(self):
         self._handlers: Dict[Mode, Callable] = {
             Mode.trajectory: self._render_trajectory,

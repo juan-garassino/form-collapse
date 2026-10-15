@@ -13,17 +13,33 @@ Strange attractor simulation studio. Generates artistic outputs from chaotic dyn
 
 ## Quick Start
 
+Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/). Dependencies are declared in `pyproject.toml` and pinned in `uv.lock`.
+
 ```bash
-pip install -r requirements.txt
+uv sync
+
+# Smallest run (CPU only, about 15 s): one Lorenz trajectory with preset parameters
+uv run python main.py --attractor Lorenz --mode trajectory --preset
 
 # Interactive mode (Rich CLI with menus)
-python main.py
+uv run python main.py
 
 # Command-line mode
-python main.py --attractor Lorenz --mode trajectory --preset
-python main.py --attractor Lorenz --mode all --export both
-python main.py --mode phase,timeseries --export svg
+uv run python main.py --attractor Lorenz --mode all --export both
+uv run python main.py --mode phase,timeseries --export svg
 ```
+
+The examples below use `python main.py`; prefix with `uv run` if you have not activated the `.venv` that `uv sync` creates.
+
+### Example output
+
+The smallest run above writes a session directory under `results/` (git-ignored) containing `session.json`, `png/` (3D plot, 2D projections, summary plot) and `data/` (trajectory CSV). Its log ends with a classification line like:
+
+```
+Lorenz: strange_attractor (MLE=1.0304, 0.2s)
+```
+
+The MLE value varies between runs because the initial condition is random: two runs on 2026-10-15 with the pinned dependencies gave 1.0304 and 0.7594. These numbers are not stored in the repo. The repo's own check is `tests/test_core.py`, which asserts that the Lorenz MLE estimate lies in the range 0.3 to 2.0 (the Lorenz system's MLE is positive, as the method in [docs/lyapunov.md](docs/lyapunov.md) expects for chaos).
 
 ## Features
 
@@ -182,17 +198,17 @@ tests/
 
 ## Requirements
 
-```
-numpy scipy matplotlib seaborn torch pyyaml svgwrite rich pyfiglet pytest textual plotext
-```
+Python 3.12+. Runtime dependencies (see `pyproject.toml`): numpy, scipy, matplotlib, seaborn, torch, pyyaml, svgwrite, rich, pyfiglet, textual, plotext (pytest is also listed there).
 
 Optional: `ffmpeg` (for animation export)
 
 ## Tests
 
 ```bash
-pytest tests/ -v
+uv run pytest tests/ -v
 ```
+
+14 tests in `tests/test_core.py`, all passing at the time of this README update.
 
 ## License
 
