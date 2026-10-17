@@ -221,6 +221,11 @@ def main() -> None:
         extra_kwargs['azimuth'] = args.azimuth
     if args.auto_project:
         extra_kwargs['auto_project'] = True
+    extra_kwargs['plotter_opts'] = {
+        'epsilon': args.rdp_epsilon,
+        'feed_rate': args.feed_rate,
+        'canvas_margin': args.canvas_margin,
+    }
 
     # --- Composition mode ---
     if args.compose:

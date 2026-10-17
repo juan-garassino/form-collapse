@@ -61,6 +61,8 @@ class RenderRequest:
     elevation: Optional[float] = None
     azimuth: Optional[float] = None
     auto_project: bool = False
+    # Plotter options: epsilon (RDP, SVG + G-code), feed_rate / canvas_margin (G-code)
+    plotter_opts: Optional[Dict[str, Any]] = None
 
 
 class ModeRouter:
@@ -103,16 +105,21 @@ class ModeRouter:
             logger.error(f"Plotter projection failed for {request.name}: {e}")
             return files
 
+        opts = request.plotter_opts or {}
+        svg_opts = {k: opts[k] for k in ("epsilon",) if opts.get(k) is not None}
+        gcode_opts = {k: opts[k] for k in ("epsilon", "feed_rate", "canvas_margin")
+                      if opts.get(k) is not None}
+
         if request.export_svg:
             try:
-                save_svg(data_2d, f"{request.name}_svg", request.output_dir)
+                save_svg(data_2d, f"{request.name}_svg", request.output_dir, **svg_opts)
                 files.append(f"{request.name}_svg.svg")
             except Exception as e:
                 logger.error(f"SVG export failed for {request.name}: {e}")
 
         if request.export_gcode:
             try:
-                generate_gcode(data_2d, f"{request.name}_gcode", request.output_dir)
+                generate_gcode(data_2d, f"{request.name}_gcode", request.output_dir, **gcode_opts)
                 files.append(f"{request.name}_gcode.gcode")
             except Exception as e:
                 logger.error(f"G-code export failed for {request.name}: {e}")
@@ -202,6 +209,7 @@ def draw_attractor(
     azimuth: Optional[float] = None,
     auto_project: bool = False,
     override_params: Optional[Dict[str, Any]] = None,
+    plotter_opts: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Unified entry point: simulate an attractor, classify it, and render requested modes.
 
@@ -283,6 +291,7 @@ def draw_attractor(
         elevation=elevation,
         azimuth=azimuth,
         auto_project=auto_project,
+        plotter_opts=plotter_opts,
     )
 
     files = _router.render(request)

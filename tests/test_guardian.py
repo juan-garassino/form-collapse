@@ -255,3 +255,20 @@ def test_draw_attractor_simulation_failure(config, tmp_output_dir, monkeypatch):
 
 def _render_must_not_run():
     raise AssertionError("render must not be called after a failed simulation")
+
+
+def test_plotter_cli_options_reach_exporters(tmp_output_dir, monkeypatch):
+    """G-016: --rdp-epsilon / --feed-rate / --canvas-margin were parsed but never
+    passed to the SVG / G-code writers, so they were silently ignored."""
+    import src.router as router
+
+    calls = {}
+    monkeypatch.setattr(router, "save_svg", lambda *a, **k: calls.setdefault("svg", k))
+    monkeypatch.setattr(router, "generate_gcode", lambda *a, **k: calls.setdefault("gcode", k))
+    req = router.RenderRequest(name="t", data=np.random.rand(50, 3), output_dir=tmp_output_dir,
+                               modes=[], export_svg=True, export_gcode=True,
+                               plotter_opts={"epsilon": 0.2, "feed_rate": 900.0,
+                                             "canvas_margin": 0.1})
+    router.ModeRouter().render(req)
+    assert calls["svg"] == {"epsilon": 0.2}
+    assert calls["gcode"] == {"epsilon": 0.2, "feed_rate": 900.0, "canvas_margin": 0.1}
