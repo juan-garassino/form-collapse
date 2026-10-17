@@ -140,6 +140,7 @@ def test_compose_layers_fits_non_square_canvas(tmp_output_dir):
     """G-012: compose_layers scaled y by the canvas WIDTH, so on a wide canvas the
     drawing overflowed the SVG viewBox vertically."""
     import xml.etree.ElementTree as ET
+
     from src.composition import CompositionLayer, compose_layers
 
     t = np.linspace(0, 2 * np.pi, 200)
@@ -155,6 +156,7 @@ def test_map_initial_state_is_in_basin():
     """G-013: maps started from randn*0.1, so a negative x0 sent the logistic map
     to -inf (NaN) and the run failed validation (~20% of seeds)."""
     import warnings
+
     from src.attractors.simulators import adaptive_simulation
 
     cases = [('logistic_map', {'r': 3.9}), ('henon_map', {'a': 1.4, 'b': 0.3}),
@@ -164,13 +166,14 @@ def test_map_initial_state_is_in_basin():
         for func, params in cases:
             for seed in range(20):
                 np.random.seed(seed)
-                ok, data, msg = adaptive_simulation('t', func, params, 10, 2000)
+                ok, _, msg = adaptive_simulation('t', func, params, 10, 2000)
                 assert ok, (func, seed, msg)
 
 
 def test_gan_preprocess_constant_column_is_finite():
     """G-014: discrete maps have a constant z column; std=0 made every GAN input NaN."""
     import torch
+
     from src.gan.training import preprocess_data
 
     data = np.c_[np.random.rand(256, 2), np.zeros(256)]
