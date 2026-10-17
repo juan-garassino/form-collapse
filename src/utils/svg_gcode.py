@@ -32,32 +32,36 @@ def rdp_simplify(points: np.ndarray, epsilon: float = 0.01) -> np.ndarray:
     if len(points) <= 2:
         return points
 
-    # Find the point with the maximum distance from the line between
-    # the first and last point.
-    start, end = points[0], points[-1]
-    line_vec = end - start
-    line_len = np.linalg.norm(line_vec)
-
-    if line_len == 0:
-        # All points collapse to a single location – keep first & last.
-        dists = np.linalg.norm(points - start, axis=1)
-    else:
-        # Perpendicular distance of every interior point to the line.
-        unit = line_vec / line_len
-        diff = points - start
-        proj = np.outer(diff @ unit, unit)
-        perp = diff - proj
-        dists = np.linalg.norm(perp, axis=1)
-
-    idx = np.argmax(dists)
-    d_max = dists[idx]
-
-    if d_max > epsilon:
-        left = rdp_simplify(points[: idx + 1], epsilon)
-        right = rdp_simplify(points[idx:], epsilon)
-        return np.vstack([left[:-1], right])
-    else:
-        return np.array([start, end])
+    # Iterative (explicit stack) so long, spiral-like trajectories cannot
+    # exceed Python's recursion limit; keeps the same vertices as the
+    # classic recursive formulation.
+    keep = np.zeros(len(points), dtype=bool)
+    keep[0] = keep[-1] = True
+    stack = [(0, len(points) - 1)]
+    while stack:
+        lo, hi = stack.pop()
+        if hi - lo < 2:
+            continue
+        start, end = points[lo], points[hi]
+        seg = points[lo:hi + 1]
+        line_vec = end - start
+        line_len = np.linalg.norm(line_vec)
+        diff = seg - start
+        if line_len == 0:
+            # Start and end coincide - use distance to that point.
+            dists = np.linalg.norm(diff, axis=1)
+        else:
+            # Perpendicular distance of every point to the line.
+            unit = line_vec / line_len
+            perp = diff - np.outer(diff @ unit, unit)
+            dists = np.linalg.norm(perp, axis=1)
+        idx = int(np.argmax(dists))
+        if dists[idx] > epsilon:
+            mid = lo + idx
+            keep[mid] = True
+            stack.append((mid, hi))
+            stack.append((lo, mid))
+    return points[keep]
 
 
 # ---------------------------------------------------------------------------

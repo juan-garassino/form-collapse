@@ -59,3 +59,46 @@ def test_preserve_aspect_false_fills_canvas():
     square = np.array([[0.0, 0.0], [1.0, 1.0]])
     scaled = _normalise_and_scale(square, (200, 100), preserve_aspect=False)
     np.testing.assert_allclose(scaled.max(axis=0), [200, 100])
+
+
+def test_rdp_simplify_long_spiral_no_recursion_error():
+    """G-008: an outward spiral makes recursive RDP recurse ~N deep and crash."""
+    from src.utils.svg_gcode import rdp_simplify
+
+    t = np.arange(5000)
+    pts = np.c_[t * np.cos(t * 0.5), t * np.sin(t * 0.5)]
+    pts = (pts - pts.min(0)) / (pts.max(0) - pts.min(0)) * 800
+    out = rdp_simplify(pts, 4.0)
+    assert 2 <= len(out) <= len(pts)
+    np.testing.assert_array_equal(out[0], pts[0])
+    np.testing.assert_array_equal(out[-1], pts[-1])
+
+
+def test_rdp_simplify_matches_reference():
+    """G-008: iterative RDP keeps exactly the vertices of the textbook algorithm."""
+    from src.utils.svg_gcode import rdp_simplify
+
+    pts = np.array([[0, 0], [1, 0.1], [2, -0.1], [3, 5], [4, 6], [5, 7], [6, 8.1], [7, 9]],
+                   dtype=float)
+    out = rdp_simplify(pts, 1.0)
+    np.testing.assert_array_equal(out, pts[[0, 2, 3, 7]])
+    # Degenerate inputs
+    assert len(rdp_simplify(pts[:2], 1.0)) == 2
+    loop = np.array([[0, 0], [1, 1], [0, 0]], dtype=float)
+    np.testing.assert_array_equal(rdp_simplify(loop, 0.5), loop)
+
+
+def test_sessions_created_same_second_do_not_collide(tmp_output_dir, monkeypatch):
+    """G-009: two sessions in the same second must not share (and overwrite) a directory."""
+    import src.session as session_mod
+
+    class _FrozenDT(session_mod.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 1, 1, 0, 0, 0)
+
+    monkeypatch.setattr(session_mod, "datetime", _FrozenDT)
+    a = session_mod.Session(base_dir=tmp_output_dir)
+    b = session_mod.Session(base_dir=tmp_output_dir)
+    assert a.session_dir != b.session_dir
+    assert os.path.isdir(a.session_dir) and os.path.isdir(b.session_dir)
