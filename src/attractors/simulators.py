@@ -5,7 +5,25 @@ from typing import Dict, Any, Callable, Tuple, Optional
 import logging
 import time
 import warnings
-from .attractors import *
+from .attractors import (
+    lorenz_system,
+    aizawa_system,
+    rabinovich_fabrikant_system,
+    three_scroll_system,
+    rossler_system,
+    chen_system,
+    halvorsen_system,
+    anishchenko_system,
+    arnold_system,
+    burke_shaw_system,
+    chen_celikovsky_system,
+    finance_system,
+    newton_leipnik_system,
+    qi_chen_system,
+    rayleigh_benard_system,
+    tsucs1_system,
+    liu_chen_system,
+)
 from .maps import MAP_FUNCTIONS
 
 logger = logging.getLogger(__name__)

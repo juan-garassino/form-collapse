@@ -102,3 +102,16 @@ def test_sessions_created_same_second_do_not_collide(tmp_output_dir, monkeypatch
     b = session_mod.Session(base_dir=tmp_output_dir)
     assert a.session_dir != b.session_dir
     assert os.path.isdir(a.session_dir) and os.path.isdir(b.session_dir)
+
+
+def test_compute_curvature_planar_circle():
+    """G-010: curvature must use the full |r' x r''| (a circle in the xy-plane is 1/R, not 0)."""
+    from src.utils.animations import compute_curvature
+
+    R = 5.0
+    t = np.linspace(0, 2 * np.pi, 2000)
+    k = compute_curvature(R * np.cos(t), R * np.sin(t), np.zeros_like(t))
+    np.testing.assert_allclose(k[5:-5], 1 / R, rtol=1e-3)
+    # Rotating the plane must not change curvature.
+    k2 = compute_curvature(np.zeros_like(t), R * np.cos(t), R * np.sin(t))
+    np.testing.assert_allclose(k2[5:-5], 1 / R, rtol=1e-3)

@@ -21,9 +21,13 @@ def compute_curvature(x: np.ndarray, y: np.ndarray, z: np.ndarray) -> np.ndarray
     d2y = np.gradient(dy)
     d2z = np.gradient(dz)
 
-    numerator = np.abs(dy * d2z - dz * d2y)
+    # kappa = |r' x r''| / |r'|^3 (all three cross-product components).
+    cross = np.stack([dy * d2z - dz * d2y, dz * d2x - dx * d2z, dx * d2y - dy * d2x])
+    numerator = np.linalg.norm(cross, axis=0)
     denominator = (dx**2 + dy**2 + dz**2)**1.5
-    curvature = numerator / (denominator + 1e-6)  # Add small value to avoid division by zero
+    # Guard zero-speed samples without biasing small (finely sampled) steps.
+    curvature = np.divide(numerator, denominator, out=np.zeros_like(numerator, dtype=float),
+                          where=denominator > 0)
 
     return curvature
 
@@ -41,7 +45,9 @@ def animate_3d(name: str, data: np.ndarray, output_dir: str) -> None:
     curvature = compute_curvature(x, y, z)
     
     # Normalize curvature to a range suitable for line width
-    curvature = (curvature - curvature.min()) / (curvature.max() - curvature.min())  # Normalize to [0, 1]
+    span = curvature.max() - curvature.min()
+    # Normalize to [0, 1]; constant curvature would otherwise divide by zero (NaN widths).
+    curvature = (curvature - curvature.min()) / span if span > 0 else np.zeros_like(curvature)
     min_line_width = 0.1
     max_line_width = 1.2
     thickness = min_line_width + (max_line_width - min_line_width) * curvature

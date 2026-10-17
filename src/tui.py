@@ -9,7 +9,7 @@ def live_preview(config: Dict[str, Any], system_name: str, use_preset: bool = Fa
     """Launch a terminal UI for live attractor exploration."""
     try:
         from textual.app import App, ComposeResult
-        from textual.widgets import Header, Footer, Static, Log
+        from textual.widgets import Header, Footer, Static
         from textual.containers import Horizontal, Vertical
     except ImportError:
         print("Textual is not installed. Install with: pip install textual plotext")
