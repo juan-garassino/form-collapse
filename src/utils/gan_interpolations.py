@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 
 def interpolate_latent_space(generator, latent_dim, num_points=100, device='cpu'):
     generator.eval()

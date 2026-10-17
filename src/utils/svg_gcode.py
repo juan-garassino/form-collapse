@@ -1,7 +1,7 @@
 import svgwrite
 import os
 import logging
-from typing import List, Tuple
+from typing import List
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -32,32 +32,36 @@ def rdp_simplify(points: np.ndarray, epsilon: float = 0.01) -> np.ndarray:
     if len(points) <= 2:
         return points
 
-    # Find the point with the maximum distance from the line between
-    # the first and last point.
-    start, end = points[0], points[-1]
-    line_vec = end - start
-    line_len = np.linalg.norm(line_vec)
-
-    if line_len == 0:
-        # All points collapse to a single location – keep first & last.
-        dists = np.linalg.norm(points - start, axis=1)
-    else:
-        # Perpendicular distance of every interior point to the line.
-        unit = line_vec / line_len
-        diff = points - start
-        proj = np.outer(diff @ unit, unit)
-        perp = diff - proj
-        dists = np.linalg.norm(perp, axis=1)
-
-    idx = np.argmax(dists)
-    d_max = dists[idx]
-
-    if d_max > epsilon:
-        left = rdp_simplify(points[: idx + 1], epsilon)
-        right = rdp_simplify(points[idx:], epsilon)
-        return np.vstack([left[:-1], right])
-    else:
-        return np.array([start, end])
+    # Iterative (explicit stack) so long, spiral-like trajectories cannot
+    # exceed Python's recursion limit; keeps the same vertices as the
+    # classic recursive formulation.
+    keep = np.zeros(len(points), dtype=bool)
+    keep[0] = keep[-1] = True
+    stack = [(0, len(points) - 1)]
+    while stack:
+        lo, hi = stack.pop()
+        if hi - lo < 2:
+            continue
+        start, end = points[lo], points[hi]
+        seg = points[lo:hi + 1]
+        line_vec = end - start
+        line_len = np.linalg.norm(line_vec)
+        diff = seg - start
+        if line_len == 0:
+            # Start and end coincide - use distance to that point.
+            dists = np.linalg.norm(diff, axis=1)
+        else:
+            # Perpendicular distance of every point to the line.
+            unit = line_vec / line_len
+            perp = diff - np.outer(diff @ unit, unit)
+            dists = np.linalg.norm(perp, axis=1)
+        idx = int(np.argmax(dists))
+        if dists[idx] > epsilon:
+            mid = lo + idx
+            keep[mid] = True
+            stack.append((mid, hi))
+            stack.append((lo, mid))
+    return points[keep]
 
 
 # ---------------------------------------------------------------------------
@@ -190,11 +194,6 @@ def _normalise_and_scale(data: np.ndarray, canvas_size, canvas_margin: float = 0
     # Normalise to [0, 1]
     normalised = (pts - mins) / ranges
 
-    if preserve_aspect:
-        # Use the same scale factor for both axes so aspect ratio is kept
-        aspect = ranges / ranges.max()
-        normalised = normalised * aspect
-
     # Compute drawable area inside margins
     cw, ch = float(canvas_size[0]), float(canvas_size[1])
     margin_x = cw * canvas_margin
@@ -203,8 +202,16 @@ def _normalise_and_scale(data: np.ndarray, canvas_size, canvas_margin: float = 0
     draw_h = ch - 2 * margin_y
 
     scaled = normalised.copy()
-    scaled[:, 0] = normalised[:, 0] * draw_w + margin_x
-    scaled[:, 1] = normalised[:, 1] * draw_h + margin_y
+    if preserve_aspect:
+        # One uniform data-units -> canvas-units factor for both axes, sized so
+        # the larger data extent fits the drawable area (works on non-square
+        # canvases too, where per-axis draw_w/draw_h scaling would distort).
+        factor = min(draw_w / ranges[0], draw_h / ranges[1])
+        scaled[:, 0] = normalised[:, 0] * ranges[0] * factor + margin_x
+        scaled[:, 1] = normalised[:, 1] * ranges[1] * factor + margin_y
+    else:
+        scaled[:, 0] = normalised[:, 0] * draw_w + margin_x
+        scaled[:, 1] = normalised[:, 1] * draw_h + margin_y
 
     return scaled
 

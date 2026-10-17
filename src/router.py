@@ -3,7 +3,7 @@
 import logging
 import time
 from enum import Enum
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, Any, List, Optional, Callable
 
 import numpy as np
@@ -14,10 +14,9 @@ from .attractors.simulators import (
     compute_lyapunov_exponent,
     classify_attractor,
 )
-from .utils.config import generate_system_params, generate_params_lhs, KNOWN_GOOD_PRESETS
+from .utils.config import generate_system_params, KNOWN_GOOD_PRESETS
 from .utils.visualization import (
     plot_attractor,
-    create_summary_plot,
     plot_phase_space,
     plot_time_series,
     plot_poincare_section,
@@ -62,6 +61,8 @@ class RenderRequest:
     elevation: Optional[float] = None
     azimuth: Optional[float] = None
     auto_project: bool = False
+    # Plotter options: epsilon (RDP, SVG + G-code), feed_rate / canvas_margin (G-code)
+    plotter_opts: Optional[Dict[str, Any]] = None
 
 
 class ModeRouter:
@@ -94,29 +95,31 @@ class ModeRouter:
             except Exception as e:
                 logger.error(f"Failed to render mode {mode.value} for {request.name}: {e}")
 
-        # Cross-cutting: SVG / G-code export
-        # Compute 2D projection for plotter output
-        if request.auto_project:
-            from .utils.projection import find_optimal_projection
-            _, _, data_2d = find_optimal_projection(request.data)
-        elif request.elevation is not None or request.azimuth is not None:
-            from .utils.projection import project_3d_to_2d
-            data_2d = project_3d_to_2d(request.data,
-                                        request.elevation or 30.0,
-                                        request.azimuth or -60.0)
-        else:
-            data_2d = request.data[:, :2]
+        # Cross-cutting: SVG / G-code export (projection only when needed, and
+        # guarded so a projection error cannot discard the files rendered above)
+        if not (request.export_svg or request.export_gcode):
+            return files
+        try:
+            data_2d = _plotter_projection(request)
+        except Exception as e:
+            logger.error(f"Plotter projection failed for {request.name}: {e}")
+            return files
+
+        opts = request.plotter_opts or {}
+        svg_opts = {k: opts[k] for k in ("epsilon",) if opts.get(k) is not None}
+        gcode_opts = {k: opts[k] for k in ("epsilon", "feed_rate", "canvas_margin")
+                      if opts.get(k) is not None}
 
         if request.export_svg:
             try:
-                save_svg(data_2d, f"{request.name}_svg", request.output_dir)
+                save_svg(data_2d, f"{request.name}_svg", request.output_dir, **svg_opts)
                 files.append(f"{request.name}_svg.svg")
             except Exception as e:
                 logger.error(f"SVG export failed for {request.name}: {e}")
 
         if request.export_gcode:
             try:
-                generate_gcode(data_2d, f"{request.name}_gcode", request.output_dir)
+                generate_gcode(data_2d, f"{request.name}_gcode", request.output_dir, **gcode_opts)
                 files.append(f"{request.name}_gcode.gcode")
             except Exception as e:
                 logger.error(f"G-code export failed for {request.name}: {e}")
@@ -170,6 +173,23 @@ class ModeRouter:
             return None
 
 
+def _plotter_projection(request: RenderRequest) -> np.ndarray:
+    """Compute the 2D projection used for SVG / G-code plotter output."""
+    if request.auto_project:
+        from .utils.projection import find_optimal_projection
+        _, _, data_2d = find_optimal_projection(request.data)
+        return data_2d
+    if request.elevation is not None or request.azimuth is not None:
+        from .utils.projection import project_3d_to_2d
+        # 0.0 is a valid angle: only fall back to defaults when truly unset.
+        return project_3d_to_2d(
+            request.data,
+            30.0 if request.elevation is None else request.elevation,
+            -60.0 if request.azimuth is None else request.azimuth,
+        )
+    return request.data[:, :2]
+
+
 # Global router instance
 _router = ModeRouter()
 
@@ -189,6 +209,7 @@ def draw_attractor(
     azimuth: Optional[float] = None,
     auto_project: bool = False,
     override_params: Optional[Dict[str, Any]] = None,
+    plotter_opts: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Unified entry point: simulate an attractor, classify it, and render requested modes.
 
@@ -270,6 +291,7 @@ def draw_attractor(
         elevation=elevation,
         azimuth=azimuth,
         auto_project=auto_project,
+        plotter_opts=plotter_opts,
     )
 
     files = _router.render(request)

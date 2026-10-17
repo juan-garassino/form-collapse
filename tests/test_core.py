@@ -1,10 +1,8 @@
 """Core tests for formCollapse — Phase 1D."""
 import json
 import os
-import tempfile
 
 import numpy as np
-import pytest
 import torch
 
 

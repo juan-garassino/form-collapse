@@ -10,3 +10,5 @@ build/
 *.egg
 .env
 .venv/
+.coverage
+*.log

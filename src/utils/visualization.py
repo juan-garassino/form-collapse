@@ -1,14 +1,11 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
-from mpl_toolkits.mplot3d import Axes3D
 import os
 import numpy as np
-from typing import Dict, Tuple, Optional
+from typing import Dict
 import logging
-from matplotlib.animation import FuncAnimation
 from scipy.signal import welch, savgol_filter
 from scipy.interpolate import splprep, splev
-from scipy.signal import savgol_filter
 
 logger = logging.getLogger(__name__)
 

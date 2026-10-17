@@ -1,11 +1,29 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.spatial import cKDTree
-from typing import Dict, Any, Callable, Tuple, Optional, List
+from typing import Dict, Any, Callable, Tuple, Optional
 import logging
 import time
 import warnings
-from .attractors import *
+from .attractors import (
+    lorenz_system,
+    aizawa_system,
+    rabinovich_fabrikant_system,
+    three_scroll_system,
+    rossler_system,
+    chen_system,
+    halvorsen_system,
+    anishchenko_system,
+    arnold_system,
+    burke_shaw_system,
+    chen_celikovsky_system,
+    finance_system,
+    newton_leipnik_system,
+    qi_chen_system,
+    rayleigh_benard_system,
+    tsucs1_system,
+    liu_chen_system,
+)
 from .maps import MAP_FUNCTIONS
 
 logger = logging.getLogger(__name__)
@@ -85,7 +103,9 @@ def adaptive_simulation(
     if system_func in MAP_FUNCTIONS:
         map_function = MAP_FUNCTIONS[system_func]
         n_iterations = int(sim_steps)
-        initial_state = np.random.randn(3) * 0.1
+        # Small positive start: inside the basin of every map here (a negative
+        # x0 sends the logistic map to -inf).
+        initial_state = np.random.uniform(0.01, 0.2, 3)
         try:
             data = iterate_map(map_function, initial_state, params, n_iterations)
             valid, message = check_simulation_validity(data, n_iterations)

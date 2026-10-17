@@ -27,8 +27,17 @@ class _NumpyEncoder(json.JSONEncoder):
 class Session:
     def __init__(self, base_dir: str = "results"):
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.session_dir = os.path.join(base_dir, self.timestamp)
-        os.makedirs(self.session_dir, exist_ok=True)
+        # Sessions started in the same second get a numeric suffix instead of
+        # sharing (and overwriting) one directory.
+        name, n = self.timestamp, 1
+        while True:
+            self.session_dir = os.path.join(base_dir, name)
+            try:
+                os.makedirs(self.session_dir)
+                break
+            except FileExistsError:
+                n += 1
+                name = f"{self.timestamp}_{n}"
         self.results: List[Dict[str, Any]] = []
         logger.info(f"Session created: {self.session_dir}")
 

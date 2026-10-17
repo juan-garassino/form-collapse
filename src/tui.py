@@ -9,7 +9,7 @@ def live_preview(config: Dict[str, Any], system_name: str, use_preset: bool = Fa
     """Launch a terminal UI for live attractor exploration."""
     try:
         from textual.app import App, ComposeResult
-        from textual.widgets import Header, Footer, Static, Log
+        from textual.widgets import Header, Footer, Static
         from textual.containers import Horizontal, Vertical
     except ImportError:
         print("Textual is not installed. Install with: pip install textual plotext")
@@ -21,8 +21,7 @@ def live_preview(config: Dict[str, Any], system_name: str, use_preset: bool = Fa
         print("plotext is not installed. Install with: pip install plotext")
         return
 
-    import numpy as np
-    from .attractors.simulators import adaptive_simulation, compute_lyapunov_exponent, classify_attractor, SYSTEM_FUNCTIONS
+    from .attractors.simulators import adaptive_simulation, compute_lyapunov_exponent, classify_attractor
     from .utils.config import generate_system_params, KNOWN_GOOD_PRESETS
 
     class AttractorApp(App):
