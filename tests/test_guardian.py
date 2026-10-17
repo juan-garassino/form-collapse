@@ -180,3 +180,78 @@ def test_gan_preprocess_constant_column_is_finite():
     out = preprocess_data({"henon": data}, seq_len=64)
     assert out.shape == (7, 64, 3)
     assert torch.isfinite(out).all()
+
+
+def test_save_svg_paths_stay_on_canvas(tmp_output_dir, lorenz_data):
+    """Export path: SVG is written, parseable, and every vertex lies on the canvas."""
+    import re
+    import xml.etree.ElementTree as ET
+
+    from src.utils.svg_gcode import save_svg
+
+    save_svg(lorenz_data[:, :2], "lz", tmp_output_dir, canvas_size=(800, 400))
+    path = os.path.join(tmp_output_dir, "svg", "lz.svg")
+    paths = [e for e in ET.parse(path).iter() if e.tag.endswith("path")]
+    assert paths
+    nums = np.array([float(v) for p in paths for v in re.findall(r"-?\d+\.?\d*", p.get("d"))])
+    xy = nums.reshape(-1, 2)
+    assert (xy >= 0).all() and (xy[:, 0] <= 800).all() and (xy[:, 1] <= 400).all()
+
+
+def test_load_config_errors(tmp_output_dir):
+    """Config loading: missing file, malformed YAML and empty path fail loudly."""
+    import pytest
+    import yaml
+
+    from src.utils.config import get_config, load_config
+
+    with pytest.raises(FileNotFoundError):
+        load_config(os.path.join(tmp_output_dir, "nope.yaml"))
+    bad = os.path.join(tmp_output_dir, "bad.yaml")
+    with open(bad, "w") as f:
+        f.write("systems: [unclosed\n")
+    with pytest.raises(yaml.YAMLError):
+        load_config(bad)
+    with pytest.raises(ValueError):
+        get_config("")
+
+
+def test_draw_attractor_smoke(config, tmp_output_dir, monkeypatch):
+    """Idea 2: simulate -> classify -> render (mocked) -> session, end to end."""
+    import src.router as router
+    from src.session import Session
+
+    seen = {}
+
+    def fake_render(req):
+        seen["req"] = req
+        return ["fake.png"]
+
+    monkeypatch.setattr(router._router, "render", fake_render)
+    session = Session(base_dir=tmp_output_dir)
+    params = {"sigma": 10.0, "rho": 28.0, "beta": 8.0 / 3.0,
+              "sim_time": 20.0, "sim_steps": 2000, "scale": 20.0}
+    np.random.seed(0)
+    out = router.draw_attractor("Lorenz", config, [router.Mode.trajectory], tmp_output_dir,
+                                session=session, override_params=params, elevation=0.0)
+    assert out["files"] == ["fake.png"]
+    assert out["data"].shape == (2000, 3)
+    assert out["classification"] != "failed"
+    assert seen["req"].elevation == 0.0 and seen["req"].modes == [router.Mode.trajectory]
+    assert session.results[0]["system_name"] == "Lorenz"
+    with open(session.save()) as f:
+        assert json.load(f)["num_results"] == 1
+
+
+def test_draw_attractor_simulation_failure(config, tmp_output_dir, monkeypatch):
+    """A failed simulation returns a 'failed' result instead of rendering."""
+    import src.router as router
+
+    monkeypatch.setattr(router, "adaptive_simulation", lambda *a, **k: (False, None, "boom"))
+    monkeypatch.setattr(router._router, "render", lambda req: _render_must_not_run())
+    out = router.draw_attractor("Lorenz", config, [router.Mode.all], tmp_output_dir, use_preset=True)
+    assert out["classification"] == "failed" and out["files"] == [] and out["message"] == "boom"
+
+
+def _render_must_not_run():
+    raise AssertionError("render must not be called after a failed simulation")
