@@ -93,8 +93,15 @@ class ModeRouter:
             except Exception as e:
                 logger.error(f"Failed to render mode {mode.value} for {request.name}: {e}")
 
-        # Cross-cutting: SVG / G-code export
-        data_2d = _plotter_projection(request)
+        # Cross-cutting: SVG / G-code export (projection only when needed, and
+        # guarded so a projection error cannot discard the files rendered above)
+        if not (request.export_svg or request.export_gcode):
+            return files
+        try:
+            data_2d = _plotter_projection(request)
+        except Exception as e:
+            logger.error(f"Plotter projection failed for {request.name}: {e}")
+            return files
 
         if request.export_svg:
             try:

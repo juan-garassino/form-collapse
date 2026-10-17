@@ -115,3 +115,22 @@ def test_compute_curvature_planar_circle():
     # Rotating the plane must not change curvature.
     k2 = compute_curvature(np.zeros_like(t), R * np.cos(t), R * np.sin(t))
     np.testing.assert_allclose(k2[5:-5], 1 / R, rtol=1e-3)
+
+
+def test_router_projection_failure_does_not_abort_render(tmp_output_dir, monkeypatch):
+    """G-011: plotter projection ran unguarded even with no SVG/G-code export,
+    so a projection error crashed render() and lost every generated file."""
+    import src.utils.projection as projection
+    from src.router import Mode, ModeRouter, RenderRequest
+
+    def boom(*a, **k):
+        raise ValueError("degenerate data")
+
+    monkeypatch.setattr(projection, "find_optimal_projection", boom)
+    router = ModeRouter()
+    monkeypatch.setitem(router._handlers, Mode.trajectory, lambda req: "x.png")
+    req = RenderRequest(name="t", data=np.random.rand(50, 3), output_dir=tmp_output_dir,
+                        modes=[Mode.trajectory], auto_project=True)
+    assert router.render(req) == ["x.png"]
+    req.export_svg = True
+    assert router.render(req) == ["x.png"]  # export failure is logged, not raised
