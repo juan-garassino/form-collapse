@@ -103,7 +103,9 @@ def adaptive_simulation(
     if system_func in MAP_FUNCTIONS:
         map_function = MAP_FUNCTIONS[system_func]
         n_iterations = int(sim_steps)
-        initial_state = np.random.randn(3) * 0.1
+        # Small positive start: inside the basin of every map here (a negative
+        # x0 sends the logistic map to -inf).
+        initial_state = np.random.uniform(0.01, 0.2, 3)
         try:
             data = iterate_map(map_function, initial_state, params, n_iterations)
             valid, message = check_simulation_validity(data, n_iterations)

@@ -149,3 +149,20 @@ def test_compose_layers_fits_non_square_canvas(tmp_output_dir):
     pts = np.array([p.split(",") for p in poly.get("points").split()], dtype=float)
     assert pts[:, 0].max() <= 1000 and pts[:, 1].max() <= 500
     assert pts[:, 1].max() > 400  # still uses the full height
+
+
+def test_map_initial_state_is_in_basin():
+    """G-013: maps started from randn*0.1, so a negative x0 sent the logistic map
+    to -inf (NaN) and the run failed validation (~20% of seeds)."""
+    import warnings
+    from src.attractors.simulators import adaptive_simulation
+
+    cases = [('logistic_map', {'r': 3.9}), ('henon_map', {'a': 1.4, 'b': 0.3}),
+             ('ikeda_map', {'u': 0.9}), ('standard_map', {'K': 1.2})]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        for func, params in cases:
+            for seed in range(20):
+                np.random.seed(seed)
+                ok, data, msg = adaptive_simulation('t', func, params, 10, 2000)
+                assert ok, (func, seed, msg)
