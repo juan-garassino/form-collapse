@@ -21,6 +21,7 @@ def preprocess_data(results: Dict[str, np.ndarray], seq_len: int = 64) -> torch.
     # Normalize the data
     data_mean = np.mean(all_data, axis=0)
     data_std = np.std(all_data, axis=0)
+    data_std[data_std == 0] = 1.0  # constant column (e.g. z of a 2D map) -> avoid NaN
     normalized_data = (all_data - data_mean) / data_std
 
     # Window into overlapping segments

@@ -166,3 +166,14 @@ def test_map_initial_state_is_in_basin():
                 np.random.seed(seed)
                 ok, data, msg = adaptive_simulation('t', func, params, 10, 2000)
                 assert ok, (func, seed, msg)
+
+
+def test_gan_preprocess_constant_column_is_finite():
+    """G-014: discrete maps have a constant z column; std=0 made every GAN input NaN."""
+    import torch
+    from src.gan.training import preprocess_data
+
+    data = np.c_[np.random.rand(256, 2), np.zeros(256)]
+    out = preprocess_data({"henon": data}, seq_len=64)
+    assert out.shape == (7, 64, 3)
+    assert torch.isfinite(out).all()
