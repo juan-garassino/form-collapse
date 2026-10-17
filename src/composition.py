@@ -64,7 +64,8 @@ def compose_layers(layers: List[CompositionLayer], output_dir: str,
     for layer in layers:
         data_2d = layer.data[:, :2] if layer.data.shape[1] >= 2 else layer.data
         transformed = _apply_transform(data_2d, layer)
-        scaled = transformed * (canvas_size[0] - 1)
+        # Scale each axis by its own canvas dimension (non-square canvases).
+        scaled = transformed * (np.asarray(canvas_size[:2], dtype=float) - 1)
 
         g = dwg.g(id=layer.name)
         points = scaled.tolist()
@@ -95,7 +96,7 @@ def compose_layers(layers: List[CompositionLayer], output_dir: str,
 
             data_2d = layer.data[:, :2] if layer.data.shape[1] >= 2 else layer.data
             transformed = _apply_transform(data_2d, layer)
-            scaled = transformed * (gcode_canvas[0] - 1)
+            scaled = transformed * (np.asarray(gcode_canvas, dtype=float) - 1)
 
             f.write("G0 Z5 ; Raise pen\n")
             f.write(f"G0 X{scaled[0, 0]:.2f} Y{scaled[0, 1]:.2f} ; Move to start\n")

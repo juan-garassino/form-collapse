@@ -134,3 +134,18 @@ def test_router_projection_failure_does_not_abort_render(tmp_output_dir, monkeyp
     assert router.render(req) == ["x.png"]
     req.export_svg = True
     assert router.render(req) == ["x.png"]  # export failure is logged, not raised
+
+
+def test_compose_layers_fits_non_square_canvas(tmp_output_dir):
+    """G-012: compose_layers scaled y by the canvas WIDTH, so on a wide canvas the
+    drawing overflowed the SVG viewBox vertically."""
+    import xml.etree.ElementTree as ET
+    from src.composition import CompositionLayer, compose_layers
+
+    t = np.linspace(0, 2 * np.pi, 200)
+    layer = CompositionLayer(name="c", data=np.c_[np.cos(t), np.sin(t), t])
+    files = compose_layers([layer], tmp_output_dir, canvas_size=(1000, 500))
+    poly = [e for e in ET.parse(files["svg"]).iter() if e.tag.endswith("polyline")][0]
+    pts = np.array([p.split(",") for p in poly.get("points").split()], dtype=float)
+    assert pts[:, 0].max() <= 1000 and pts[:, 1].max() <= 500
+    assert pts[:, 1].max() > 400  # still uses the full height
